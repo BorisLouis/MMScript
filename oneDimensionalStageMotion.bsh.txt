@@ -4,7 +4,7 @@ import org.micromanager.MultiStagePosition;
 /* USER INPUT */
 double nStep = 10;
 double stepSize = 0.5;
-String dim = "Z";
+String dim = "X";
 
 
 xyStage = mmc.getXYStageDevice();

@@ -4,7 +4,7 @@ import org.micromanager.MultiStagePosition;
 /* USER INPUT */
 double nStep = 10;
 double stepSize = 0.5;
-String statDim = "Z";
+String staticDim = "Z";
 
 
 xyStage = mmc.getXYStageDevice();
@@ -33,7 +33,7 @@ for (int i = 0; i<=nStep;i++) {
 		}/* We keep the first position */
 	else {
 		/* we always take the previous position to increment by stepSize*/
-		switch (statDim){
+		switch (staticDim){
 			case "X":
 			 double currXPos = prevX ;
 			 double currYPos = prevY + stepSize ;
