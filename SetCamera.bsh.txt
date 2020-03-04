@@ -1,10 +1,14 @@
-// User input 
+// User input
+PSFE = true;
 exp  = 200;//ms
 x = 0;//px
-y = 600;//px
-height = 700;//px
+y = 670;//px
+if (PSFE){
+y = y-20;
+}
+height = 750;//px
 width  = 2048; //px = full width
-camOffsetY = 75;
+camOffsetY = 80;
 
 // Camera 1
 mmc.setCameraDevice("DCAM-1");

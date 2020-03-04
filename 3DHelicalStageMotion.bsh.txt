@@ -4,8 +4,8 @@ import org.micromanager.MultiStagePosition;
 /* USER INPUT */
 double nTurn = 5;
 double stepPerTurn = 10;
-double radius = 1;
-double height = 5;
+double radius = 2;
+double heightPerTurn = 1;
 
 
 xyStage = mmc.getXYStageDevice();
@@ -23,7 +23,7 @@ double prevZ = zPos;
 
 double PI = 3.14159;
 double angleStep = 2 * PI/stepPerTurn;
-double zStep =  height/stepPerTurn;
+double zStep =  heightPerTurn/stepPerTurn;
 
 for (int i=0; i < nTurn; i++) {
 	for (int j=0; j< stepPerTurn;j++) {
@@ -33,9 +33,9 @@ for (int i=0; i < nTurn; i++) {
 		double currZPos = zPos + zStep*j+(i*stepPerTurn)*zStep;
 
 		MultiStagePosition msp = new MultiStagePosition(xyStage, currXPos, currYPos, zStage, currZPos);
-
-		msp.setLabel("Pos" + i);
-		msp.setProperty("Slide","Number "+ i);
+		label = i*stepPerTurn+j;
+		msp.setLabel("Pos" + label);
+		msp.setProperty("Slide","Number "+ label);
 		pl.addPosition(msp);
 	}
 }
