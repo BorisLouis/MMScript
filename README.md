@@ -12,3 +12,8 @@ In the MM2.0 folder, code related to an ongoing projects are found.
 One of which includes bidirectional scanning (still with the microscopy stage, here PI motors).
 
 The idea is to perform spectral mapping, the stage scans while the light is sent to a spectrometer where the pattern is imaged on the camera, the camera acquires after the motor finished moving for a given amount of datapoints, allowing a 2D mapping of the spectra.
+
+
+The ressource I found most useful is the following: https://nicost.github.io/I2K-MM/mm_api_b.html#/8/0/0
+
+Going through MM documentation and version compatibilities issue is a bit challenging, I recommend using LLM (GPT, Claude, etc...) for help debugging as they have access to the documentation.
