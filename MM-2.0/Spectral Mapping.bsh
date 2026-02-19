@@ -1,0 +1,139 @@
+// User input
+import org.micromanager.PositionList;
+import org.micromanager.MultiStagePosition;              
+import org.micromanager.data.Coordinates;
+import org.micromanager.acquisition.SequenceSettings;
+import org.micromanager.data.Datastore;
+import org.micromanager.acquisition;
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/* USER INPUT */
+// file locations
+Name = "test-scan";
+rootDirName = "C:/Users/hiros/Desktop/Boris-TEST/18-02/";
+
+//acquisition parameters
+double stepSizeXY = 0.2;
+double area = 2; //in um (one side) 1 is 1x1 um
+int exposure = 10;   // ms
+
+// define acquisition parameters
+int numFrames = 1; //per position
+/* END USER INPUT */
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+//ensure no overwrite of file path:
+baseName = Name;
+saveName = baseName;
+
+int counter = 1;
+File dir = new File(rootDirName + '/' + saveName);
+
+while (dir.exists()) {
+    saveName = baseName + "_" + counter;
+    dir = new File(rootDirName + '/' + saveName);
+    counter++;
+}
+
+//Camera SETUP
+height = 30;//px
+x = 0;//px
+y = 256-height/2;//px
+width  = 640; //px = full width
+
+
+// Camera 1
+mmc.setCameraDevice("NIRvana HS - X115480925");
+mmc.setExposure(exposure);
+mmc.setROI(x,y,width,height);
+
+// get the number of step for the scanning (number of positions)
+int nSteps = (int) Math.round(area / stepSizeXY);
+
+// Force odd number of steps so center is included
+if (nSteps % 2 == 0) {
+    nSteps += 1;
+}
+
+double totalPoint = nSteps*nSteps;
+
+
+// Create XY position list
+xyStage = mmc.getXYStageDevice();
+zStage = mmc.getFocusDevice();
+
+xyPos   = mmc.getXYStagePosition();
+double centerX = xyPos.getX();
+double centerY = xyPos.getY();
+
+double startX = centerX - (area / 2.0);
+double startY = centerY - (area / 2.0);
+
+double zPos = mmc.getPosition(zStage);
+
+PositionList pl = new PositionList();
+
+int nPos = 0;
+
+for (int row = 0; row <= nSteps; row++) {
+
+    double y = startY + row * stepSizeXY;
+
+    for (int col = 0; col <= nSteps; col++) {
+
+        double x;
+
+        // Bidirectional (serpentine) scanning
+        if (row % 2 == 0) {
+            // Even rows: left to right
+            x = startX + col * stepSizeXY;
+        } else {
+            // Odd rows: right to left
+            x = startX + (nSteps - col) * stepSizeXY;
+        }
+			
+		MultiStagePosition msp = new MultiStagePosition(xyStage, x, y, zStage, zPos);
+
+		msp.setLabel("Pos" + i);
+		msp.setProperty("Slide","Number "+ i);
+		pl.addPosition(msp);
+		nPos++;
+		
+	}	
+}
+
+mm.getPositionListManager().setPositionList(pl);
+String[] acqs = new String[pl.getNumberOfPositions()];
+
+
+// Acquire with the generated position list
+sequenceSettings = mm.acquisitions().getAcquisitionSettings();
+sb = new SequenceSettings.Builder(sequenceSettings);
+// use position list
+sb.usePositionList(true);
+
+// number of time frames
+sb.numFrames(numFrames);
+
+// save options
+sb.save(true);
+sb.root(rootDirName);
+sb.prefix(saveName);
+
+// MPIFF format (multipage TIFF)
+sb.saveMode(org.micromanager.data.Datastore.SaveMode.MULTIPAGE_TIFF);
+
+// build settings object
+SequenceSettings settings = sb.build();
+// ------------------
+// Run Acquisition
+// ------------------
+Datastore store = mm.acquisitions().runAcquisitionWithSettings(settings, true);
+ 
+
+MultiStagePosition.goToPosition(pl.getPosition(0), mmc);
+
+
+
+
+

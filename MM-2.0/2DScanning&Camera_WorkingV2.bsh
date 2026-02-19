@@ -1,0 +1,54 @@
+// import needed to get the Coords builder               
+import org.micromanager.data.Coordinates;
+import org.micromanager.acquisition.SequenceSettings;
+import org.micromanager.data.Datastore;
+import org.micromanager.acquisition;
+
+Name = "test-scan8";
+rootDirName = "C:/Users/hiros/Desktop/Boris-TEST/18-02/";
+
+basePath = rootDirName + "/" + acqName;
+savePath = basePath;
+
+int counter = 1;
+File dir = new File(savePath);
+
+while (dir.exists()) {
+    savePath = basePath + "_" + counter;
+    dir = new File(savePath);
+    counter++;
+}
+
+store = mm.data().createMultipageTIFFDatastore(
+            savePath,
+            true,
+            false);
+store.setSummaryMetadata(mm.data().getSummaryMetadataBuilder().build());
+display = mm.displays().createDisplay(store);
+
+
+sequenceSettings = mm.acquisitions().getAcquisitionSettings();
+sb = new SequenceSettings.Builder(sequenceSettings);
+// use position list
+sb.usePositionList(true);
+
+// number of time frames
+sb.numFrames(1);
+
+// save options
+sb.save(true);
+sb.root(savePath);
+
+// MPIFF format (multipage TIFF)
+sb.saveMode(org.micromanager.data.Datastore.SaveMode.MULTIPAGE_TIFF);
+
+// build settings object
+SequenceSettings settings = sb.build();
+
+//mm.acquisitions().setAcquisitionSettings(sb.build());
+//mm.acquisitions().runAcquistionNonblocking();
+
+// ------------------
+// Run Acquisition
+// ------------------
+Datastore store = mm.acquisitions().runAcquisitionWithSettings(settings, true);

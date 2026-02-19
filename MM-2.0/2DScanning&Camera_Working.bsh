@@ -1,0 +1,56 @@
+
+acqName = "test-scan8";
+rootDirName = "C:/Users/hiros/Desktop/Boris-TEST/18-02/";
+
+basePath = rootDirName + "/" + acqName;
+savePath = basePath;
+
+int counter = 1;
+File dir = new File(savePath);
+
+while (dir.exists()) {
+    savePath = basePath + "_" + counter;
+    dir = new File(savePath);
+    counter++;
+}
+
+
+
+// import needed to get the Coords builder               
+import org.micromanager.data.Coordinates;
+
+store = mm.data().createMultipageTIFFDatastore(
+            savePath,
+            true,
+            false);
+store.setSummaryMetadata(mm.data().getSummaryMetadataBuilder().build());
+display = mm.displays().createDisplay(store);
+
+
+
+// create the Coords builder, and initialize all axes to zero
+cb = Coordinates.builder();
+cb.c(0).t(0).p(0).z(0);
+
+posList = mm.positions().getPositionList();
+nPos = posList.getNumberOfPositions();
+
+
+for (p = 0; p < nPos; p++) {
+	// Move stage
+    MultiStagePosition.goToPosition(posList.getPosition(p), mmc);
+    mmc.waitForDevice(mmc.getXYStageDevice());
+   // snap an image but do not display
+   images = mm.live().snap(true);
+   mmc.waitForDevice(mmc.getCameraDevice());
+   img = images.get(0);
+   // copy image with Coords specified by our builder
+   cImg = img.copyAtCoords(cb.p(p).build());
+   // and place it in the store
+   store.putImage(cImg);
+   mmc.sleep(5);
+}
+store.freeze(); // Important: must be called to finalize the data
+// If using RAM datastore, you can then save it:
+// store.save(Datastore.SaveMode.MULTIPAGE_TIFF, saveLocation);
+store.close();
