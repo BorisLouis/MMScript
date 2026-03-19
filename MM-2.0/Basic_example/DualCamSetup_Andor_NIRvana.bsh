@@ -1,0 +1,24 @@
+
+// User input
+exp1  = 200;//ms
+exp2  = 100;
+x = 0;//px
+y1 = 243;//px
+w1 = 640;//px
+w2= 1024;//px
+y2 =78;//px
+
+
+h1 = 20;//px
+
+h2 = 58;//px
+
+// Camera 1
+mmc.setCameraDevice("NIRvana HS - X115480925");
+mmc.setExposure(exp1);
+mmc.setROI(x,y1,w1,h1);
+
+// Camera 2
+mmc.setCameraDevice("Andor");
+mmc.setExposure(exp2);
+mmc.setROI(x,y2,w2,h2);

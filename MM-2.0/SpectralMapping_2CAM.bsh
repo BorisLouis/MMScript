@@ -1,0 +1,195 @@
+// ============================
+// INITIAL SETUP
+// ============================
+import org.micromanager.PositionList;
+import org.micromanager.MultiStagePosition; 
+import org.micromanager.data.Coordinates; 
+import org.micromanager.acquisition.SequenceSettings;
+import org.micromanager.data.Datastore; 
+import org.micromanager.acquisition; 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// /* USER INPUT */ 
+// file locations 
+Name = "test-2DSCanning2Cam"; 
+rootDirName = "C:/Users/hiros/Desktop/Boris-TEST/18-3/"; 
+boolean unidirectional = false; // <-- set this to false for bidirectional 
+//acquisition parameters 
+double stepSizeXY = 0.5; double area = 20;//in um (one side) 1 is 1x1 um
+int exposure = 200; // ms 
+// define acquisition parameters
+int numFrames = 1; //per position 
+
+//Camera SETUP 
+
+// Camera names ==> As they appear in MM Device Browser
+String cam1 = "NIRvana HS - X115480925";
+String cam2 = "Andor"; // <-- CHANGE THIS
+
+// Exposure
+int exposure1 = 200;
+int exposure2 = 200;
+
+x0 = 0;//px
+//ROI CAM1
+y1 = 243;//px
+w1 = 640;//px
+
+h1 = 20;//px
+//ROI CAM2
+w2= 1024;//px
+y2 =78;//px
+h2 = 58;//px !!! ANDOR camera cannot go below 58px without reducing the width.
+
+/* END USER INPUT */ ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
+
+//ensure no overwrite of file path: 
+baseName = Name; 
+saveName = baseName; 
+int counter = 1; 
+File dir = new File(rootDirName + '/' + saveName); 
+while (dir.exists()) 
+	{ 
+	saveName = baseName + "_" + counter; 
+	dir = new File(rootDirName + '/' + saveName); counter++; 
+	}
+
+// Get devices
+xyStage = mmc.getXYStageDevice();
+zStage  = mmc.getFocusDevice();
+
+// Store center
+xyPos = mmc.getXYStagePosition();
+double centerX = xyPos.getX();
+double centerY = xyPos.getY();
+double zPos = mmc.getPosition(zStage);
+
+// Grid definition
+int nSteps = (int) Math.round(area / stepSizeXY);
+if (nSteps % 2 == 0) { nSteps += 1; }
+
+double gridWidth = (nSteps - 1) * stepSizeXY;
+double startX = centerX - gridWidth / 2.0;
+double startY = centerY - gridWidth / 2.0;
+
+// ============================
+// CREATE DATASTORES (one per camera)
+// ============================
+
+Datastore store1 = mm.data().createRAMDatastore();
+Datastore store2 = mm.data().createRAMDatastore();
+win = mm.displays().createDisplay(store1);
+// ============================
+// MAIN LOOP
+// ============================
+
+int frameIndex = 0;
+
+for (int row = 0; row < nSteps; row++) {
+
+    double y = startY + row * stepSizeXY;
+
+    for (int col = 0; col < nSteps; col++) {
+
+        double x;
+
+        if (unidirectional) {
+            if (row % 2 == 0) {
+                x = startX + col * stepSizeXY;
+            } else {
+                x = startX + (nSteps - 1 - col) * stepSizeXY;
+            }
+        } else {
+            x = startX + col * stepSizeXY;
+        }
+
+        // ----------------------------
+        // MOVE STAGE
+        // ----------------------------
+        mmc.setXYPosition(xyStage, x, y);
+        mmc.setPosition(zStage, zPos);
+        mmc.waitForDevice(xyStage);
+			
+        print("Position: X=" + x + " Y=" + y);
+
+        // ============================
+        // CAMERA 1
+        // ============================
+        mmc.setCameraDevice(cam1);
+        //mmc.clearROI();
+        mmc.setROI(x0,y1,w1,h1);
+
+        mmc.setExposure(exposure1);
+
+        mmc.snapImage();
+		  tagged1 = mmc.getTaggedImage();  
+
+        img1 = mm.data().convertTaggedImage(tagged1);
+
+        // Add metadata (POSITION!)
+        coords1 = mm.data().getCoordsBuilder()
+                        .t(0)
+                        .p(frameIndex)
+                        .c(0)
+                        .build();
+			// Attach coords to image
+		  img1 = img1.copyAtCoords(coords1);
+        //meta1 = img1.getMetadata().copyBuilder()
+        //            .userData("X", x)
+        //            .userData("Y", y)
+        //            .userData("Camera", "Cam1")
+        //            .build();
+
+        store1.putImage(img1);
+		  // update display
+		  //win.updateDisplay();  
+        // ============================
+        // CAMERA 2
+        // ============================
+        mmc.setCameraDevice(cam2);
+        mmc.clearROI();
+        mmc.setROI(x0,y2,w2,h2);
+        mmc.setExposure(exposure2);
+
+        mmc.snapImage();
+		  tagged2 = mmc.getTaggedImage();  
+
+        img2 = mm.data().convertTaggedImage(tagged2);
+
+        // Add metadata (POSITION!)
+        coords2 = mm.data().getCoordsBuilder()
+                        .t(0)
+                        .p(frameIndex)
+                        .c(1)
+                        .build();
+			// Attach coords to image
+		  img2 = img2.copyAtCoords(coords2);
+        //meta1 = img1.getMetadata().copyBuilder()
+        //            .userData("X", x)
+        //            .userData("Y", y)
+        //            .userData("Camera", "Cam1")
+        //            .build();
+
+        store2.putImage(img2);
+
+        frameIndex++;
+    }
+}
+
+store1.freeze();
+store2.freeze();
+// ============================
+// RETURN TO CENTER
+// ============================
+
+mmc.setXYPosition(xyStage, centerX, centerY);
+mmc.setPosition(zStage, zPos);
+mmc.waitForDevice(xyStage);
+mmc.waitForDevice(zStage);
+
+store1.save(Datastore.SaveMode.MULTIPAGE_TIFF, savePath+"_Cam1");
+store1.close();
+
+store2.save(Datastore.SaveMode.MULTIPAGE_TIFF, savePath+"_Cam2");
+store2.close();
+
+print("SUCCESS: Image saved to " + savePath);
+

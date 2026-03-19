@@ -1,0 +1,73 @@
+// ============================
+// SIMPLE SNAP + SAVE TEST
+// ============================
+
+// File path
+String savePath = "C:/Users/hiros/Desktop/Boris-TEST/18-3/test_MM_simple1" + System.currentTimeMillis();
+
+// Camera
+String cam = "NIRvana HS - X115480925";
+
+// Exposure
+int exposure = 200;
+x = 0;//px
+//ROI CAM1
+y1 = 243;//px
+w1 = 640;//px
+
+h1 = 20;//px
+// ----------------------------
+// SET CAMERA
+// ----------------------------
+mmc.setCameraDevice(cam);
+mmc.setExposure(exposure);
+mmc.clearROI(); // full frame (safer for test)
+mmc.setROI(x,y1,w1,h1);
+// ----------------------------
+// SNAP IMAGE
+// ----------------------------
+mmc.snapImage();
+tagged = mmc.getTaggedImage();   // ? FIX HERE
+if (tagged == null) {
+    print("ERROR: tagged image is NULL");
+    return;
+} else {
+    print("Tagged image OK");
+}
+// Convert to MM image
+img = mm.data().convertTaggedImage(tagged);
+if (img == null) {
+    print("ERROR: tagged image is NULL");
+    return;
+} else {
+    print("Tagged image OK");
+}
+
+coords = mm.data().getCoordsBuilder()
+            .t(0).p(0).c(0).z(0)
+            .build();
+
+// Attach coords to image
+img = img.copyAtCoords(coords);
+// ----------------------------
+// CREATE DATASTORE
+// ----------------------------
+// ? Create RAM datastore instead
+Datastore store1 = mm.data().createRAMDatastore();
+
+if (store == null) {
+    print("ERROR: datastore is NULL");
+    return;
+}
+
+// Put image
+store1.putImage(img);
+
+// Freeze (important)
+store1.freeze();
+
+// ? Save to disk AFTER
+store1.save(Datastore.SaveMode.MULTIPAGE_TIFF, savePath);
+store1.close();
+
+print("SUCCESS: Image saved to " + savePath);
