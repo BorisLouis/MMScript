@@ -8,14 +8,15 @@ import org.micromanager.acquisition;
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* USER INPUT */
 // file locations
-Name = "test-spectralMappingvFbiDir";
-rootDirName = "C:/Users/hiros/Desktop/Boris-TEST/17-3/";
+Name = "test-RectangleSpectralMap";
+rootDirName = "C:/Users/hiros/Desktop/Boris-TEST/26-3-2026";
 
 boolean unidirectional = false; // <-- set this to false for bidirectional
 
 //acquisition parameters
-double stepSizeXY = 0.5;
-double area = 20; //in um (one side) 1 is 1x1 um
+double stepSizeXY = 1;
+double areaX = 20; //in um (one side) 
+double areaY = 10; //in um (one side) 
 int exposure = 200;   // ms
 
 // define acquisition parameters
@@ -53,15 +54,22 @@ mmc.setExposure(exposure);
 mmc.setROI(x,y,width,height);
 
 // get the number of step for the scanning (number of positions)
-int nSteps = (int) Math.round(area / stepSizeXY);
+int nStepsX = (int) Math.round(areaX / stepSizeXY);
+int nStepsY = (int) Math.round(areaY / stepSizeXY);
+
 
 // Force odd number of steps so center is included
-if (nSteps % 2 == 0) {
-    nSteps += 1;
+if (nStepsX % 2 == 0) {
+    nStepsX += 1;
+}
+
+// Force odd number of steps so center is included
+if (nStepsY % 2 == 0) {
+    nStepsY += 1;
 }
 
 
-double totalPoint = nSteps*nSteps;
+double totalPoint = nStepsX*nStepsY;
 
 
 // Create XY position list
@@ -72,10 +80,11 @@ xyPos   = mmc.getXYStagePosition();
 double centerX = xyPos.getX();
 double centerY = xyPos.getY();
 
-double gridWidth = (nSteps - 1) * stepSizeXY;
+double gridWidthX = (nStepsX - 1) * stepSizeXY;
+double gridWidthY = (nStepsY - 1) * stepSizeXY;
 
-double startX = centerX - gridWidth / 2.0;
-double startY = centerY - gridWidth / 2.0;
+double startX = centerX - gridWidthX / 2.0;
+double startY = centerY - gridWidthY / 2.0;
 
 
 print("CenterX: " + centerX);
@@ -91,26 +100,26 @@ PositionList pl = new PositionList();
 
 int nPos = 0;
 
-for (int row = 0; row < nSteps; row++) {
+for (int row = 0; row < nStepsY; row++) {
 
     double y = startY + row * stepSizeXY;
 
-    for (int col = 0; col < nSteps; col++) {
+    for (int col = 0; col < nStepsX; col++) {
 
         double x;
 
         if (unidirectional) {
-            // Bidirectional (serpentine) scanning
+            // Unidirectional (always left to right)
+            x = startX + col * stepSizeXY;
+        } else {
+        	 // Bidirectional (serpentine) scanning
             if (row % 2 == 0) {
                 // Even rows: left to right
                 x = startX + col * stepSizeXY;
             } else {
                 // Odd rows: right to left
-                x = startX + (nSteps - 1 - col) * stepSizeXY;
+                x = startX + (nStepsX - 1 - col) * stepSizeXY;
             }
-        } else {
-            // Unidirectional (always left to right)
-            x = startX + col * stepSizeXY;
         }
 			
 		MultiStagePosition msp = new MultiStagePosition(xyStage, x, y, zStage, zPos);
@@ -126,6 +135,7 @@ for (int row = 0; row < nSteps; row++) {
 mm.getPositionListManager().setPositionList(pl);
 String[] acqs = new String[pl.getNumberOfPositions()];
 
+// Check at Tools - StagePosition list
 
 // Acquire with the generated position list
 sequenceSettings = mm.acquisitions().getAcquisitionSettings();
@@ -142,7 +152,7 @@ sb.save(true);
 sb.root(rootDirName);
 sb.prefix(saveName);
 
-// MPIFF format (multipage TIFF)
+// MPIFF format (multipage TIFF) <under construction>
 sb.saveMode(org.micromanager.data.Datastore.SaveMode.MULTIPAGE_TIFF);
 
 // build settings object
@@ -153,7 +163,7 @@ SequenceSettings settings = sb.build();
 Datastore store = mm.acquisitions().runAcquisitionWithSettings(settings, true);
 
 
-
+//coming back to the original position
 mmc.setXYPosition(xyStage, centerX, centerY);
 mmc.setPosition(zStage, zPos);
 mmc.waitForDevice(xyStage);
