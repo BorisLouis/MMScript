@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Louis"
+  given-names: "Boris"
+  orcid: "https://orcid.org/0000-0003-2882-6907"
+title: "MMScript"
+version: 1.0.0
+doi: "https://doi.org/10.5281/zenodo.22729904"
+date-released: 2026-09-12
+url: "https://github.com/BorisLouis/MMScript"
